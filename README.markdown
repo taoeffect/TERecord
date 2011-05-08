@@ -2,7 +2,7 @@
 
 Clojure inspired records for Objective-C.
 
-Please see [this blog post for an explanation](http://www.taoeffect.com/blog/2011/05/better-objective-c-through-clojure-philosophy/)
+Please see [this blog post for an explanation](http://www.taoeffect.com/blog/2011/05/better-objective-c-through-clojure-philosophy/).
 
 #License
 
