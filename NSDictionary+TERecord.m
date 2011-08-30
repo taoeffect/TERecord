@@ -59,7 +59,7 @@
 }
 - (void)forwardInvocation:(NSInvocation *)anInvocation
 {
-	id value = [self objectForKey:NSStringFromSelector([anInvocation selector])];
+	__unsafe_unretained id value = [self objectForKey:NSStringFromSelector([anInvocation selector])];
 	[anInvocation setReturnValue:&value];
 }
 @end
@@ -79,7 +79,7 @@
 	{
 		NSRange firstChar = NSMakeRange(3,1);
 		NSRange rest = NSMakeRange(4, [selector length] - 5);
-		id value;
+		__unsafe_unretained id value;
 		selector = [[[selector substringWithRange:firstChar] lowercaseString] stringByAppendingString:[selector substringWithRange:rest]];
 		[anInvocation getArgument:&value atIndex:2];
 		[self setObject:value forKey:selector];
