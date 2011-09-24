@@ -31,12 +31,21 @@
 
 #import <Foundation/Foundation.h>
 
-#define _MD(...)  [NSMutableDictionary dictionaryWithKeysAndObjects:__VA_ARGS__, nil]
-#define _D(...)   [NSDictionary dictionaryWithKeysAndObjects:__VA_ARGS__, nil]
-// these allow a way to use values not defined in a protocol w/o triggering compiler warnings
-#define _dg(_d, _s) objc_msgSend(_d, @selector(_s))
-#define _ds(_d, _s, _v) objc_msgSend(_d, @selector(set##_s:), _v)
+// ===================================================
+// == USAGE INFO! IMPORTANT! READ THIS OR BE SORRY! ==
+// ===================================================
+//
+// The types of properties that are allowed in TERecords are:
+//
+// 1) Objects that inherit from NSObject
+// 2) Protocols that represent TERecords (meaning: NSMutableDictionaries)
+//
+// That's it! No primitives. Nothing else!
 
-@interface NSDictionary (TERecord)
-+ (id)dictionaryWithKeysAndObjects:(id)firstKey, ... NS_REQUIRES_NIL_TERMINATION;
+@protocol TERecord <NSObject, NSCopying, NSCoding>
+//@property (nonatomic, strong, readonly) Protocol *protocol;
+@property (nonatomic, strong, readonly) NSMutableDictionary *dictCopy;
 @end
+
+// IMPORTANT: YOU *MUST* USE THIS FUNCTION TO CREATE YOUR RECORDS!
+id TERecordCreate(Protocol *proto);
