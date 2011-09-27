@@ -33,9 +33,6 @@
 #import "NSDictionary+TERecord.h"
 #import "Common.h"
 
-// many thanks go to this blog post for some of the code here:
-// http://blog.lhunath.com/2010/01/clean-up-your-configuration.html
-
 @interface TERecordValue : NSObject <NSCoding, NSCopying> {
     NSRecursiveLock *lock;
 }
@@ -166,7 +163,22 @@
     if ( rVal.atomic ) [rVal unlock];
     return obj;
 }
-// TODO: implement setValue:forKeyPath:
+- (void)setValue:(id)value forKeyPath:(NSString *)keyPath
+{
+    NSArray *comps = [keyPath componentsSeparatedByString:@"."];
+    TERecordValue *rVal = [dict objectForKey:[comps objectAtIndex:0]];
+    id obj;
+    NSUInteger i, count = [comps count];
+    if ( rVal.atomic ) [rVal lock];
+    if ( count > 1 ) {
+        obj = rVal.obj;
+        for ( i=1; i < count-1; ++i )
+            obj = [obj valueForKey:[comps objectAtIndex:i]];
+        [obj setValue:value forKey:[comps lastObject]];
+    } else
+        rVal.obj = value;
+    if ( rVal.atomic ) [rVal unlock];
+}
 - (NSUInteger)hash
 {
     return [dict hash];
@@ -175,6 +187,10 @@
 {
     return [dict isEqual:object];
 }
+
+// many thanks go to this blog post for some of the code here:
+// http://blog.lhunath.com/2010/01/clean-up-your-configuration.html
+
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)sel
 {
 //    log_debug("%s: %@", __func__, NSStringFromSelector(sel));
@@ -232,61 +248,3 @@ id TERecordCreate(Protocol *proto)
     free(properties);
     return [[TERecord alloc] initWithDict:dict];
 }
-#if 0
-@implementation NSDictionary (TERecord)
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel
-{
-	return [NSMethodSignature signatureWithObjCTypes:"@@:"];
-}
-- (void)forwardInvocation:(NSInvocation *)anInvocation
-{
-	TERecordValue *value = [self objectForKey:NSStringFromSelector([anInvocation selector])];
-    __unsafe_unretained id obj = value.obj;
-    [anInvocation setReturnValue:&obj];
-}
-@end
-
-@implementation NSMutableDictionary (TERecord)
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel
-{
-	if ( [NSStringFromSelector(sel) hasPrefix:@"set"] )
-		return [NSMethodSignature signatureWithObjCTypes:"v@:@"];
-	else
-		return [super methodSignatureForSelector:sel];
-}
-- (void)forwardInvocation:(NSInvocation *)anInvocation
-{
-    NSString *selector = NSStringFromSelector([anInvocation selector]);
-	if ( [selector hasPrefix:@"set"] )
-	{
-		NSRange firstChar = NSMakeRange(3,1);
-		NSRange rest = NSMakeRange(4, [selector length] - 5);
-		__unsafe_unretained id value;
-		selector = [[[selector substringWithRange:firstChar] lowercaseString] stringByAppendingString:[selector substringWithRange:rest]];
-		[anInvocation getArgument:&value atIndex:2];
-        TERecordValue *rValue = [self objectForKey:selector];
-        if ( __unlikely(rValue.atomic) )
-            @synchronized (rValue) {
-//                [self willChangeValueForKey:selector];
-                rValue.obj = value;
-                [self setValue:rValue forKey:selector];
-//                [self didChangeValueForKey:selector];
-            }
-        else {
-//            [self willChangeValueForKey:selector];
-            rValue.obj = value;
-//            [self didChangeValueForKey:selector];
-            [self setValue:rValue forKey:selector];
-        }
-	}
-	else
-    {
-        TERecordValue *rValue = [self objectForKey:selector];
-        if ( __unlikely(rValue.atomic) )
-            @synchronized (rValue) { [super forwardInvocation:anInvocation]; }
-        else
-            [super forwardInvocation:anInvocation];
-    }
-}
-@end
-#endif

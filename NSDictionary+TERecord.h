@@ -35,12 +35,7 @@
 // == USAGE INFO! IMPORTANT! READ THIS OR BE SORRY! ==
 // ===================================================
 //
-// The types of properties that are allowed in TERecords are:
-//
-// 1) Objects that inherit from NSObject
-// 2) Protocols that represent TERecords (meaning: NSMutableDictionaries)
-//
-// That's it! No primitives. Nothing else!
+// Only properties that inherit from NSObject are allowed!
 
 @protocol TERecord <NSObject, NSCopying, NSCoding>
 //@property (nonatomic, strong, readonly) Protocol *protocol;
