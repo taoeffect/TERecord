@@ -51,6 +51,7 @@
 }
 - (id)initWithCoder:(NSCoder *)aDecoder
 {
+//    log_debug("%s", __func__);
     if ( self = [super init] ) {
         obj = [aDecoder decodeObjectForKey:@"obj"];
         atomic = [aDecoder decodeBoolForKey:@"atomic"];
@@ -60,6 +61,7 @@
 }
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
+//    log_debug("%s", __func__);
     [aCoder encodeObject:obj forKey:@"obj"];
     [aCoder encodeBool:atomic forKey:@"atomic"];
 }
@@ -79,6 +81,10 @@
 - (BOOL)isEqual:(id)object
 {
     return [obj isEqual:object];
+}
+- (NSString*)description
+{
+    return [obj description];
 }
 - (void)lock
 {
@@ -108,10 +114,12 @@
 }
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
+//    log_debug("%s", __func__);
     [aCoder encodeObject:dict forKey:@"dict"];
 }
 - (id)initWithCoder:(NSCoder *)aDecoder
 {
+//    log_debug("%s", __func__);
     if ( self = [super init] )
         dict = [aDecoder decodeObjectForKey:@"dict"];
     return self;
@@ -186,6 +194,10 @@
 - (BOOL)isEqual:(id)object
 {
     return [dict isEqual:object];
+}
+- (NSString*)description
+{
+    return [dict description];
 }
 
 // many thanks go to this blog post for some of the code here:
