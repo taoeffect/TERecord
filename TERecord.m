@@ -1,5 +1,5 @@
 //
-//  NSDictionary+TERecord.m
+//  TERecord.m
 //
 //  Created by Greg Slepak on 5/8/11.
 
@@ -30,7 +30,7 @@
 // or implied, of Tao Effect LLC.
 
 #import <objc/objc-runtime.h>
-#import "NSDictionary+TERecord.h"
+#import "TERecord.h"
 #import "Common.h"
 
 @interface TERecordValue : NSObject <NSCoding, NSCopying> {
@@ -139,11 +139,11 @@
 - (void)setValue:(id)value forKey:(NSString *)key
 {
     TERecordValue *rVal = [dict objectForKey:key];
-    if ( rVal.atomic ) [rVal lock];
     [self willChangeValueForKey:key];
+    if ( rVal.atomic ) [rVal lock];
     rVal.obj = value;
-    [self didChangeValueForKey:key];
     if ( rVal.atomic ) [rVal unlock];
+    [self didChangeValueForKey:key];
 }
 - (void)setNilValueForKey:(NSString *)key
 {

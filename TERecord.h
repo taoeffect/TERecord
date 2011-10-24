@@ -1,5 +1,5 @@
 //
-//  NSDictionary+TERecord.h
+//  TERecord.h
 //
 //  Created by Greg Slepak on 5/8/11.
 
