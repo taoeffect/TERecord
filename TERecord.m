@@ -31,6 +31,7 @@
 
 #import <objc/objc-runtime.h>
 #import "TERecord.h"
+#import "NSFileManager+TEAdditions.h"
 #import "Common.h"
 
 @interface TERecordValue : NSObject <NSCoding, NSCopying> {
@@ -38,6 +39,7 @@
 }
 @property (nonatomic, retain) id obj;
 @property (nonatomic) BOOL atomic;
+//@property (nonatomic) BOOL bookmark; // indicates we represent an NSURL that must be restored via bookmark data
 - (void)lock;
 - (void)unlock;
 @end
@@ -56,13 +58,68 @@
         obj = [aDecoder decodeObjectForKey:@"obj"];
         atomic = [aDecoder decodeBoolForKey:@"atomic"];
         lock = [NSRecursiveLock new];
+        
+        if ( [aDecoder decodeBoolForKey:@"fileRefURL"] ) {
+            // only decode as fileReferenceURL is we're not a volume... (i.e. mounted,
+            // we don't want to get a file reference to the mountpoint!)
+            // yes... *sigh*... this is super-hackish and Espionage specific.
+            
+            // TODO: get rid of this! replace with this on db load:
+            //       folder.mountpoint = [folder.mountpoint fileReferenceURL]
+            
+            if ( ![[NSFileManager defaultManager] isVolumeAtURL:obj error:nil] )
+                obj = [obj fileReferenceURL];
+            log_debug("%s: decoded '%@'", __func__, [obj path]);
+        }
+        
+        // NOTE: see note below in -encodeWithCoder
+//        bookmark = [aDecoder decodeBoolForKey:@"bookmark"];        
+//        if ( bookmark ) {
+//            NSError *error;
+//            obj = [NSURL URLByResolvingBookmarkData:obj
+//                                            options:0
+//                                      relativeToURL:nil
+//                                bookmarkDataIsStale:NULL
+//                                              error:&error];
+//            if ( error ) {
+//                log_err("%s: %@: '%@'", __func__, error, obj);
+//                obj = nil;
+//            } else if ( ![obj isFileReferenceURL] ) {
+//                log_warn("%s: not a fileReference: %@", __func__, obj);
+//                obj = [obj fileReferenceURL];
+//            }
+//            log_debug("%s: resolved bookmark: '%@'", __func__, obj);
+//        }
     }
     return self;
 }
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
 //    log_debug("%s", __func__);
-    [aCoder encodeObject:obj forKey:@"obj"];
+    if ( [obj isMemberOfClass:[NSURL class]] && [obj isFileReferenceURL] ) {
+        // save fileReferenceURLs as filePathURLs because reference URLs aren't persistent
+        [aCoder encodeObject:[obj filePathURL] forKey:@"obj"];
+        [aCoder encodeBool:YES forKey:@"fileRefURL"];
+        // NOTE: saving bookmark data doesn't help us if the folder is unlocked (mounted)
+        //       and then we relaunch Espionage, as it tries to resolve against the mountpoint
+        //       and fails, returning NULL when calling +URLByResolvingBookmarkData from -initWithCoder 
+//        log_debug("%s: saving bookmark for '%@'", __func__, [obj path]);
+//        NSData *data = [obj bookmarkDataWithOptions:(NSURLBookmarkCreationSuitableForBookmarkFile|NSURLBookmarkCreationPreferFileIDResolution)
+//                     includingResourceValuesForKeys:$a(NSURLFileResourceIdentifierKey)
+//                                      relativeToURL:nil
+//                                              error:nil];
+//        if ( !data ) {
+//            // save as regular filePathURL instead
+//            log_warn("%s: couldn't create bookmark for '%@'!", __func__, [obj path]);
+//            [aCoder encodeObject:[obj filePathURL] forKey:@"obj"];
+//        } else {
+//            [aCoder encodeBool:YES forKey:@"bookmark"];
+//            [aCoder encodeObject:data forKey:@"obj"];
+//        }
+    } else {
+        // just encode the object directly
+        [aCoder encodeObject:obj forKey:@"obj"];
+    }
     [aCoder encodeBool:atomic forKey:@"atomic"];
 }
 - (id)copyWithZone:(NSZone *)zone
