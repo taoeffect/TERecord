@@ -59,19 +59,6 @@
         atomic = [aDecoder decodeBoolForKey:@"atomic"];
         lock = [NSRecursiveLock new];
         
-        if ( [aDecoder decodeBoolForKey:@"fileRefURL"] ) {
-            // only decode as fileReferenceURL is we're not a volume... (i.e. mounted,
-            // we don't want to get a file reference to the mountpoint!)
-            // yes... *sigh*... this is super-hackish and Espionage specific.
-            
-            // TODO: get rid of this! replace with this on db load:
-            //       folder.mountpoint = [folder.mountpoint fileReferenceURL]
-            
-            if ( ![[NSFileManager defaultManager] isVolumeAtURL:obj error:nil] )
-                obj = [obj fileReferenceURL];
-            log_debug("%s: decoded '%@'", __func__, [obj path]);
-        }
-        
         // NOTE: see note below in -encodeWithCoder
 //        bookmark = [aDecoder decodeBoolForKey:@"bookmark"];        
 //        if ( bookmark ) {
@@ -99,7 +86,6 @@
     if ( [obj isMemberOfClass:[NSURL class]] && [obj isFileReferenceURL] ) {
         // save fileReferenceURLs as filePathURLs because reference URLs aren't persistent
         [aCoder encodeObject:[obj filePathURL] forKey:@"obj"];
-        [aCoder encodeBool:YES forKey:@"fileRefURL"];
         // NOTE: saving bookmark data doesn't help us if the folder is unlocked (mounted)
         //       and then we relaunch Espionage, as it tries to resolve against the mountpoint
         //       and fails, returning NULL when calling +URLByResolvingBookmarkData from -initWithCoder 
@@ -196,11 +182,22 @@
 - (void)setValue:(id)value forKey:(NSString *)key
 {
     TERecordValue *rVal = [dict objectForKey:key];
+    // NOTE: 
+    // we *don't* do this because we don't know what the value for rVal.atomic is
+    // instead users of TERecord should make sure that whatever class they store
+    // as a property of a TERecord supports the NSCoding protocol, *even* if all
+    // it does in encodeWithCoder is encode a [NSNull null] value. Basically we
+    // want to make sure that TERecordValues are created by the TERecordCreate function.
+//    if ( !rVal ) {
+//        rVal = [TERecordValue new];
+//        [dict setObject:rVal forKey:key];
+//    }
     [self willChangeValueForKey:key];
     if ( rVal.atomic ) [rVal lock];
     rVal.obj = value;
     if ( rVal.atomic ) [rVal unlock];
     [self didChangeValueForKey:key];
+//    log_debug("%s: %@ %@", __func__, key, rVal ? rVal.obj : @"NULL");
 }
 - (void)setNilValueForKey:(NSString *)key
 {
@@ -209,6 +206,7 @@
 - (id)valueForKey:(NSString *)key
 {
     TERecordValue *rVal = [dict objectForKey:key];
+//    log_debug("%s: %@ %@", __func__, key, rVal ? rVal.obj : @"NULL");
     id obj;
     if ( rVal.atomic ) [rVal lock];
     obj = rVal.obj;
