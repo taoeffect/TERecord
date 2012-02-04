@@ -1,0 +1,3 @@
+[submodule "TECommon"]
+	path = TECommon
+	url = git@github.com:taoeffect/TECommon.git
