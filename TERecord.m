@@ -188,6 +188,7 @@
     // as a property of a TERecord supports the NSCoding protocol, *even* if all
     // it does in encodeWithCoder is encode a [NSNull null] value. Basically we
     // want to make sure that TERecordValues are created by the TERecordCreate function.
+    // If you need to update the record with new properties, call TERecordUpdateProtocol
 //    if ( !rVal ) {
 //        rVal = [TERecordValue new];
 //        [dict setObject:rVal forKey:key];
@@ -255,6 +256,11 @@
     return [dict description];
 }
 
+- (NSMutableDictionary*)dict
+{
+    return dict;
+}
+
 // many thanks go to this blog post for some of the code here:
 // http://blog.lhunath.com/2010/01/clean-up-your-configuration.html
 
@@ -314,4 +320,32 @@ id TERecordCreate(Protocol *proto)
     }
     free(properties);
     return [[TERecord alloc] initWithDict:dict];
+}
+
+void TERecordUpdateProtocol(id<TERecord> r, Protocol *proto)
+{
+    unsigned int count, i;
+    objc_property_t *properties = protocol_copyPropertyList(proto, &count);
+    NSMutableDictionary *dict = r.dict;
+    for ( i = 0; i < count; ++i ) {
+        NSString *name = [NSString stringWithUTF8String:property_getName(properties[i])];
+        NSString *attrs = [NSString stringWithUTF8String:property_getAttributes(properties[i])];
+        NSArray *attrsAry = [attrs componentsSeparatedByString:@","];
+        BOOL isAtomic = YES;
+        for ( NSString *attr in attrsAry ) {
+            if ( [attr isEqualToString:@"N"] ) {
+                isAtomic = NO;
+                break;
+            }
+        }
+        //log_debug("%s: %@: %@ %@", __func__, NSStringFromProtocol(proto), attrs, name);
+        // now we set defaults so that we can safely handle atomic properties by
+        // creating the hash-tree map fully so that no more node manipulation happens
+        if ( ![dict valueForKey:name] ) {
+            TERecordValue *value = [TERecordValue new];
+            value.atomic = isAtomic;
+            [dict setObject:value forKey:name];
+        }
+    }
+    free(properties);
 }

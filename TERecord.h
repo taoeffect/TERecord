@@ -40,7 +40,9 @@
 @protocol TERecord <NSObject, NSCopying, NSCoding>
 //@property (nonatomic, strong, readonly) Protocol *protocol;
 @property (nonatomic, strong, readonly) NSMutableDictionary *dictCopy;
+@property (nonatomic, strong, readonly) NSMutableDictionary *dict;
 @end
 
 // IMPORTANT: YOU *MUST* USE THIS FUNCTION TO CREATE YOUR RECORDS!
 id TERecordCreate(Protocol *proto);
+void TERecordUpdateProtocol(id<TERecord> r, Protocol *proto);
