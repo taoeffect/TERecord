@@ -294,14 +294,13 @@
 @end
 
 // fill a dictionary with TERecordValues for each property in proto
-static inline NSMutableDictionary* dictWithProperties(NSMutableDictionary *aDict, Protocol *proto)
+static inline NSMutableDictionary* dictWithProperties(NSMutableDictionary *dict, Protocol *proto)
 {
     // use property_getAttributes to find out if atomic or not
     // see Objective-C Runtime Programming Guide for more info on the possible attributes
     unsigned int count, i;
-    NSMutableDictionary *dict;
     objc_property_t *properties = protocol_copyPropertyList(proto, &count);
-    dict = aDict ? aDict : [NSMutableDictionary dictionaryWithCapacity:count];
+    if ( !dict ) dict = [NSMutableDictionary dictionaryWithCapacity:count];
     for ( i = 0; i < count; ++i ) {
         NSString *name = [NSString stringWithUTF8String:property_getName(properties[i])];
         NSString *attrs = [NSString stringWithUTF8String:property_getAttributes(properties[i])];
@@ -316,7 +315,7 @@ static inline NSMutableDictionary* dictWithProperties(NSMutableDictionary *aDict
         //log_debug("%s: %@: %@ %@", __func__, NSStringFromProtocol(proto), attrs, name);
         // now we set defaults so that we can safely handle atomic properties by
         // creating the hash-tree map fully so that no more node manipulation happens
-        if ( !aDict || ![dict valueForKey:name] ) {
+        if ( !dict || ![dict valueForKey:name] ) {
             TERecordValue *value = [TERecordValue new];
             value.atomic = isAtomic;
             [dict setObject:value forKey:name];
