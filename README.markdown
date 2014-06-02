@@ -1,11 +1,57 @@
-#TERecord
+# TERecord
 
-Clojure inspired records for Objective-C.
+Clojure inspired records for Objective-C. Fully KVO-compliant.
 
     git submodule init
     git submodule update
 
-Please see [this blog post for an explanation](http://www.taoeffect.com/blog/2011/05/better-objective-c-through-clojure-philosophy/).
+## Step 1: Instead of a class, create a protocol
+
+```objc
+@protocol Folder <TERecord>
+@property (nonatomic, strong) NSString *uuid;
+@property (nonatomic, strong) id<Storage> storage;
+@property (nonatomic, strong) id<DiskInfo> diskinfo;
+@property (nonatomic, strong) NSURL *mountpoint;
+@property (nonatomic, strong) NSNumber *autounlock;
+@property (nonatomic, strong) NSNumber *encrypted;
+@property (nonatomic, strong) NSNumber *autolock;
+@property (nonatomic, strong) NSMutableArray *lockActions;
+@property (nonatomic, strong) NSMutableArray *unlockActions;
+@end
+```
+
+## Step 2: Call `TERecordCreate` to create instances
+
+```objc
+id<Folder> TEFolderCreate(id<Storage> storage, NSURL *mountpoint)
+{
+    id<Folder> f = TERecordCreate(@protocol(Folder));
+    f.uuid = [NSString UUID];
+    f.storage = storage;
+    f.mountpoint = mountpoint;
+    f.autolock = @0;
+    f.autounlock = @NO;
+    f.encrypted = @NO;
+    f.unlockActions = [[NSMutableArray alloc] init];
+    f.lockActions = [[NSMutableArray alloc] init];
+    return f;
+}
+```
+
+## Step 3: There is no step 3!
+
+That's it! You can now use these instances just as you would regular instances of Objective-C classes, except there's no need to create any accessors for them! They can even be serialized to disk and loaded back!
+
+## Updating serialized records with new properties from the protocol
+
+Simply call `TERecordUpdateProtocol` on the instance, like so:
+
+```objc
+TERecordUpdateProtocol(folder, @protocol(Folder));
+```
+
+Please see [this blog post for original (outdated) explanation](http://www.taoeffect.com/blog/2011/05/better-objective-c-through-clojure-philosophy/).
 
 #License
 
