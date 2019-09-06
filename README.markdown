@@ -51,9 +51,9 @@ Simply call `TERecordUpdateProtocol` on the instance, like so:
 TERecordUpdateProtocol(folder, @protocol(Folder));
 ```
 
-Please see [this blog post for original (outdated) explanation](http://www.taoeffect.com/blog/2011/05/better-objective-c-through-clojure-philosophy/).
+Please see [this blog post for original (outdated) explanation](https://www.taoeffect.com/blog/2011/05/better-objective-c-through-clojure-philosophy/).
 
-#License
+# License
 
 Simplified BSD:
 
